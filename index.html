@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TV Comercial Digital</title>
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+        }
+
+        /* ===== CONTAINER RAIZ ===== */
+        #app {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* ===== CAMADA DE MÍDIA (sempre preenche tudo) ===== */
+        #media-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* Slide A e B para crossfade suave */
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.7s ease-in-out;
+            background: #000;
+        }
+
+        .slide.ativo {
+            opacity: 1;
+        }
+
+        .slide img,
+        .slide video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: fill; /* preenche 100% sem letra-boxing */
+            display: block;
+        }
+
+        /* ===== HUD — sobreposição ===== */
+        #hud {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* TOPO */
+        #topo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 9vh;
+            min-height: 52px;
+            max-height: 78px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 3vw;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, transparent 100%);
+        }
+
+        #logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #FFD700;
+            font-size: clamp(0.85rem, 2.8vh, 2.2rem);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+        }
+
+        #logo .icone-tv {
+            width: clamp(22px, 4vh, 38px);
+            height: auto;
+            flex-shrink: 0;
+        }
+
+        #relogio {
+            color: #fff;
+            font-size: clamp(0.85rem, 2.6vh, 2rem);
+            font-weight: 300;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.35);
+            padding: 0.25em 0.8em;
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        /* BARRA DE PROGRESSO */
+        #barra-wrap {
+            position: absolute;
+            bottom: 8vh;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        #barra {
+            height: 100%;
+            width: 0%;
+            background: #FFD700;
+            transition: width 0.12s linear;
+        }
+
+        /* RODAPÉ */
+        #rodape {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8vh;
+            min-height: 42px;
+            max-height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+            color: rgba(255,255,255,0.92);
+            font-size: clamp(0.7rem, 1.9vh, 1.4rem);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+            padding: 0 3vw;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        #rodape .sep {
+            color: #FFD700;
+            margin: 0 0.6em;
+            font-weight: 700;
+        }
+
+        /* INDICADORES DE SLIDE (bolinhas) */
+        #dots {
+            position: absolute;
+            bottom: calc(8vh + 14px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .dot.ativo {
+            background: #FFD700;
+            transform: scale(1.4);
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
+        @media (max-width: 600px) {
+            #topo { height: 8vh; min-height: 44px; }
+            #rodape { height: 7vh; min-height: 36px; font-size: 0.62rem; }
+            #barra-wrap { bottom: 7vh; }
+            #dots { bottom: calc(7vh + 12px); }
+        }
+
+        @media (max-width: 380px) {
+            #topo { height: 7vh; min-height: 38px; }
+            #rodape { height: 6vh; min-height: 30px; font-size: 0.55rem; }
+            #barra-wrap { bottom: 6vh; }
+            #dots { display: none; }
+        }
+
+        @media (min-width: 2560px) {
+            #topo { height: 8vh; }
+            #rodape { height: 6vh; font-size: 1.6rem; }
+            #barra-wrap { bottom: 6vh; height: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- Camada de mídia com dois slides para crossfade -->
+    <div id="media-layer">
+        <div class="slide" id="slide-a"></div>
+        <div class="slide" id="slide-b"></div>
+    </div>
+
+    <!-- HUD sempre por cima -->
+    <div id="hud">
+        <div id="topo">
+            <div id="logo">
+                <svg class="icone-tv" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <path d="M8 21h8M12 17v4"/>
+                </svg>
+                TV COMERCIAL APARECIDA
+            </div>
+            <div id="relogio">00:00</div>
+        </div>
+
+        <div id="barra-wrap">
+            <div id="barra"></div>
+        </div>
+
+        <div id="dots"></div>
+
+        <div id="rodape">
+            <span class="sep">✦</span>
+            Anuncie aqui
+            <span class="sep">•</span>
+            WhatsApp (12) 99999-9999
+            <span class="sep">✦</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const propagandas = [
+        { tipo: "imagem", arquivo: "https://i.imgur.com/mZcCdND.jpeg", tempo: 8 },
+        { tipo: "imagem", arquivo: "https://i.imgur.com/JJdZs5i.png", tempo: 8 },
+        { tipo: "imagem", arquivo: "https://i.imgur.com/QkjKCNv.png", tempo: 8 },
+        { tipo: "imagem", arquivo: "https://i.imgur.com/jyKicc5.png", tempo: 8 },
+        { tipo: "imagem", arquivo: "https://i.imgur.com/mZcCdND.jpeg", tempo: 8 },
+        { tipo: "imagem", arquivo: "https://i.imgur.com/Kxuxem8.png", tempo: 8 }
+    ];
+
+    const FALLBACK_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450'%3E%3Crect width='800' height='450' fill='%23111'/%3E%3Ctext x='400' y='225' text-anchor='middle' dominant-baseline='middle' fill='%23FFD700' font-family='sans-serif' font-size='28'%3EAnúncio%3C/text%3E%3C/svg%3E`;
+
+    const slideA = document.getElementById('slide-a');
+    const slideB = document.getElementById('slide-b');
+    const barraEl = document.getElementById('barra');
+    const dotsEl = document.getElementById('dots');
+
+    let atual = 0;
+    let slideAtivo = 'a'; // qual slide está visível
+    let timer = null;
+    let progInterval = null;
+
+    // Cria bolinhas
+    function criarDots() {
+        dotsEl.innerHTML = '';
+        propagandas.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'dot' + (i === 0 ? ' ativo' : '');
+            dotsEl.appendChild(d);
+        });
+    }
+
+    function atualizarDots(idx) {
+        dotsEl.querySelectorAll('.dot').forEach((d, i) => {
+            d.classList.toggle('ativo', i === idx);
+        });
+    }
+
+    function criarImagem(src) {
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = src;
+        img.onerror = () => { img.src = FALLBACK_SVG; };
+        return img;
+    }
+
+    function iniciarProgresso(duracaoMs) {
+        if (progInterval) clearInterval(progInterval);
+        barraEl.style.width = '0%';
+        let decorrido = 0;
+        const tick = 80;
+        progInterval = setInterval(() => {
+            decorrido += tick;
+            const pct = Math.min((decorrido / duracaoMs) * 100, 100);
+            barraEl.style.width = pct + '%';
+            if (pct >= 100) clearInterval(progInterval);
+        }, tick);
+    }
+
+    function mostrar(idx) {
+        if (timer) clearTimeout(timer);
+        if (progInterval) clearInterval(progInterval);
+
+        const item = propagandas[idx];
+        const duracaoMs = item.tempo * 1000;
+
+        // Determina qual slide vai receber o conteúdo novo (o inativo)
+        const prox = slideAtivo === 'a' ? slideB : slideA;
+        const atual_ = slideAtivo === 'a' ? slideA : slideB;
+
+        // Prepara o slide inativo com a nova mídia
+        prox.innerHTML = '';
+        prox.appendChild(criarImagem(item.arquivo));
+
+        // Crossfade
+        prox.classList.add('ativo');
+        atual_.classList.remove('ativo');
+        slideAtivo = slideAtivo === 'a' ? 'b' : 'a';
+
+        atualizarDots(idx);
+        iniciarProgresso(duracaoMs);
+
+        timer = setTimeout(() => {
+            atual = (idx + 1) % propagandas.length;
+            mostrar(atual);
+        }, duracaoMs);
+    }
+
+    // Relógio
+    function tick() {
+        const agora = new Date();
+        const h = String(agora.getHours()).padStart(2, '0');
+        const m = String(agora.getMinutes()).padStart(2, '0');
+        document.getElementById('relogio').textContent = h + ':' + m;
+    }
+    setInterval(tick, 1000);
+    tick();
+
+    // Inicia
+    criarDots();
+    mostrar(0);
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+            { tipo: "video", arquivo: "videos/video-exemplo-01.mp4" },
+
+Certifique-se de que seus vídeos e imagens estejam em formato 16:9 (ex: 1920x1080) antes de subir para a TV Box para obter o melhor resultado visual possível.
