@@ -1,371 +1,180 @@
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TV Comercial Digital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mídia Indoor - Barbearia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #040814; 
+            height: 100vh; width: 100vw;
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            background: #000;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-        }
-
-        /* ===== CONTAINER RAIZ ===== */
-        #app {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: #000;
-        }
-
-        /* ===== CAMADA DE MÍDIA (sempre preenche tudo) ===== */
-        #media-layer {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 1;
-        }
-
-        /* Slide A e B para crossfade suave */
-        .slide {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            transition: opacity 0.7s ease-in-out;
-            background: #000;
-        }
-
-        .slide.ativo {
-            opacity: 1;
-        }
-
-        .slide img,
-        .slide video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: fill; /* preenche 100% sem letra-boxing */
-            display: block;
-        }
-
-        /* ===== HUD — sobreposição ===== */
-        #hud {
-            position: absolute;
-            inset: 0;
-            z-index: 10;
-            pointer-events: none;
-        }
-
-        /* TOPO */
-        #topo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 9vh;
-            min-height: 52px;
-            max-height: 78px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 3vw;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, transparent 100%);
-        }
-
-        #logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #FFD700;
-            font-size: clamp(0.85rem, 2.8vh, 2.2rem);
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            text-shadow: 0 1px 8px rgba(0,0,0,0.8);
-        }
-
-        #logo .icone-tv {
-            width: clamp(22px, 4vh, 38px);
-            height: auto;
-            flex-shrink: 0;
-        }
-
-        #relogio {
             color: #fff;
-            font-size: clamp(0.85rem, 2.6vh, 2rem);
-            font-weight: 300;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 2px;
-            text-shadow: 0 1px 8px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.35);
-            padding: 0.25em 0.8em;
-            border-radius: 40px;
-            border: 1px solid rgba(255,255,255,0.15);
         }
 
-        /* BARRA DE PROGRESSO */
-        #barra-wrap {
+        /* Fundo estático para não pesar no processador da TV Box */
+        .background-static {
             position: absolute;
-            bottom: 8vh;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(255,255,255,0.15);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #040814 0%, #0a1025 100%);
+            z-index: -1;
         }
 
-        #barra {
-            height: 100%;
-            width: 0%;
-            background: #FFD700;
-            transition: width 0.12s linear;
+        #display-wrapper {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-in-out;
         }
 
-        /* RODAPÉ */
-        #rodape {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 8vh;
-            min-height: 42px;
-            max-height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
-            color: rgba(255,255,255,0.92);
-            font-size: clamp(0.7rem, 1.9vh, 1.4rem);
-            font-weight: 400;
-            letter-spacing: 0.3px;
-            text-shadow: 0 1px 6px rgba(0,0,0,0.9);
-            padding: 0 3vw;
-            white-space: nowrap;
+        #ad-image {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        /* Cor sólida em vez de blur para garantir que apareça na TV Box */
+        .app-container {
+            max-width: 90%;
+            background: #0a0f1e; 
+            padding: 50px;
+            border-radius: 30px;
+            border: 2px solid #e2b96f;
             text-align: center;
+            display: none;
         }
 
-        #rodape .sep {
-            color: #FFD700;
-            margin: 0 0.6em;
-            font-weight: 700;
+        .section-label {
+            font-size: 1.2rem;
+            color: #e2b96f;
+            letter-spacing: 8px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
         }
 
-        /* INDICADORES DE SLIDE (bolinhas) */
-        #dots {
-            position: absolute;
-            bottom: calc(8vh + 14px);
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-            align-items: center;
+        .quote-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 4vw;
+            line-height: 1.4;
+            margin-bottom: 25px;
         }
 
-        .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.35);
-            transition: background 0.3s, transform 0.3s;
-        }
-
-        .dot.ativo {
-            background: #FFD700;
-            transform: scale(1.4);
-        }
-
-        /* ===== RESPONSIVIDADE ===== */
-        @media (max-width: 600px) {
-            #topo { height: 8vh; min-height: 44px; }
-            #rodape { height: 7vh; min-height: 36px; font-size: 0.62rem; }
-            #barra-wrap { bottom: 7vh; }
-            #dots { bottom: calc(7vh + 12px); }
-        }
-
-        @media (max-width: 380px) {
-            #topo { height: 7vh; min-height: 38px; }
-            #rodape { height: 6vh; min-height: 30px; font-size: 0.55rem; }
-            #barra-wrap { bottom: 6vh; }
-            #dots { display: none; }
-        }
-
-        @media (min-width: 2560px) {
-            #topo { height: 8vh; }
-            #rodape { height: 6vh; font-size: 1.6rem; }
-            #barra-wrap { bottom: 6vh; height: 5px; }
+        .quote-reference {
+            font-size: 1.8vw;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 3px;
         }
     </style>
 </head>
 <body>
-
-<div id="app">
-
-    <!-- Camada de mídia com dois slides para crossfade -->
-    <div id="media-layer">
-        <div class="slide" id="slide-a"></div>
-        <div class="slide" id="slide-b"></div>
-    </div>
-
-    <!-- HUD sempre por cima -->
-    <div id="hud">
-        <div id="topo">
-            <div id="logo">
-                <svg class="icone-tv" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/>
-                    <path d="M8 21h8M12 17v4"/>
-                </svg>
-                TV COMERCIAL APARECIDA
-            </div>
-            <div id="relogio">00:00</div>
-        </div>
-
-        <div id="barra-wrap">
-            <div id="barra"></div>
-        </div>
-
-        <div id="dots"></div>
-
-        <div id="rodape">
-            <span class="sep">✦</span>
-            Anuncie aqui
-            <span class="sep">•</span>
-            WhatsApp (12) 99999-9999
-            <span class="sep">✦</span>
+    <div class="background-static"></div>
+    <div id="display-wrapper">
+        <img id="ad-image" src="" alt="">
+        <div class="app-container" id="verse-card">
+            <div class="section-label">📖 Palavra do Dia</div>
+            <p class="quote-text" id="quote-text"></p>
+            <span class="quote-reference" id="quote-ref"></span>
         </div>
     </div>
 
-</div>
+    <script>
+        // Lista de 10 Anúncios (Certifique-se que as imagens estejam na mesma pasta)
+        const ads = [
+            'https://i.imgur.com/mZcCdND.jpeg', 'https://i.imgur.com/JJdZs5i.png', 'https://i.imgur.com/QkjKCNv.png', 'https://i.imgur.com/jyKicc5.png', 'https://i.imgur.com/mZcCdND.jpeg',
+            'https://i.imgur.com/Kxuxem8.png', 'https://i.imgur.com/mZcCdND.jpeg', 'https://i.imgur.com/QkjKCNv.png', 'anuncio9.jpg', 'anuncio10.jpg'
+        ];
 
-<script>
-    const propagandas = [
-        { tipo: "imagem", arquivo: "https://i.imgur.com/mZcCdND.jpeg", tempo: 8 },
-        { tipo: "imagem", arquivo: "https://i.imgur.com/JJdZs5i.png", tempo: 8 },
-        { tipo: "imagem", arquivo: "https://i.imgur.com/QkjKCNv.png", tempo: 8 },
-        { tipo: "imagem", arquivo: "https://i.imgur.com/jyKicc5.png", tempo: 8 },
-        { tipo: "imagem", arquivo: "https://i.imgur.com/mZcCdND.jpeg", tempo: 8 },
-        { tipo: "imagem", arquivo: "https://i.imgur.com/Kxuxem8.png", tempo: 8 }
-    ];
+        // 50 Frases Bíblicas
+        const verses = [
+            { text: "Tudo posso naquele que me fortalece.", ref: "Filipenses 4:13" },
+            { text: "O Senhor é o meu pastor, nada me faltará.", ref: "Salmos 23:1" },
+            { text: "Deus é o nosso refúgio e fortaleza.", ref: "Salmos 46:1" },
+            { text: "O amor de Deus nunca falha.", ref: "1 João 4:8" },
+            { text: "Confia no Senhor de todo o teu coração.", ref: "Provérbios 3:5" },
+            { text: "A alegria do Senhor é a nossa força.", ref: "Neemias 8:10" },
+            { text: "Lâmpada para os meus pés é tua palavra.", ref: "Salmos 119:105" },
+            { text: "O Senhor te guardará de todo o mal.", ref: "Salmos 121:7" },
+            { text: "Se Deus é por nós, quem será contra nós?", ref: "Romanos 8:31" },
+            { text: "Eu sou o caminho, a verdade e a vida.", ref: "João 14:6" },
+            { text: "Grandes coisas fez o Senhor por nós.", ref: "Salmos 126:3" },
+            { text: "Onde há o Espírito do Senhor, aí há liberdade.", ref: "2 Coríntios 3:17" },
+            { text: "Mil cairão ao teu lado, mas tu não serás atingido.", ref: "Salmos 91:7" },
+            { text: "Busquem primeiro o Reino de Deus.", ref: "Mateus 6:33" },
+            { text: "Toda ferramenta preparada contra ti não prosperará.", ref: "Isaías 54:17" },
+            { text: "Deus é fiel.", ref: "1 Coríntios 1:9" },
+            { text: "A tua graça me basta.", ref: "2 Coríntios 12:9" },
+            { text: "O choro pode durar uma noite, mas a alegria vem pela manhã.", ref: "Salmos 30:5" },
+            { text: "Coragem! Eu venci o mundo.", ref: "João 16:33" },
+            { text: "O Senhor é a minha luz e a minha salvação.", ref: "Salmos 27:1" },
+            { text: "Deus é amor.", ref: "1 João 4:16" },
+            { text: "A fé é a certeza daquilo que esperamos.", ref: "Hebreus 11:1" },
+            { text: "Não temas, porque eu sou contigo.", ref: "Isaías 41:10" },
+            { text: "Deus supre todas as nossas necessidades.", ref: "Filipenses 4:19" },
+            { text: "Nada é impossível para Deus.", ref: "Lucas 1:37" },
+            { text: "Seja forte e corajoso.", ref: "Josué 1:9" },
+            { text: "O Senhor pelejará por vós.", ref: "Êxodo 14:14" },
+            { text: "A paz de Deus excede todo o entendimento.", ref: "Filipenses 4:7" },
+            { text: "Em Deus faremos proezas.", ref: "Salmos 60:12" },
+            { text: "O coração alegre aformoseia o rosto.", ref: "Provérbios 15:13" },
+            { text: "Tudo tem o seu tempo determinado.", ref: "Eclesiastes 3:1" },
+            { text: "Até aqui nos ajudou o Senhor.", ref: "1 Samuel 7:12" },
+            { text: "A palavra do Senhor permanece para sempre.", ref: "1 Pedro 1:25" },
+            { text: "Provai e vede que o Senhor é bom.", ref: "Salmos 34:8" },
+            { text: "Dá força ao cansado.", ref: "Isaías 40:29" },
+            { text: "O Senhor renova as nossas forças.", ref: "Salmos 103:5" },
+            { text: "Sê fiel até a morte e dar-te-ei a coroa da vida.", ref: "Apocalipse 2:10" },
+            { text: "Os que esperam no Senhor voarão como águias.", ref: "Isaías 40:31" },
+            { text: "Deus é o meu socorro bem presente.", ref: "Salmos 46:1" },
+            { text: "Clama a mim e responder-te-ei.", ref: "Jeremias 33:3" },
+            { text: "A oração do justo pode muito.", ref: "Tiago 5:16" },
+            { text: "Tudo coopera para o bem dos que amam a Deus.", ref: "Romanos 8:28" },
+            { text: "Deus nunca nos abandona.", ref: "Hebreus 13:5" },
+            { text: "O Senhor te abençoe e te guarde.", ref: "Números 6:24" },
+            { text: "Bem-aventurados os limpos de coração.", ref: "Mateus 5:8" },
+            { text: "O Senhor está perto dos que têm o coração quebrantado.", ref: "Salmos 34:18" },
+            { text: "A palavra de Deus é viva e eficaz.", ref: "Hebreus 4:12" },
+            { text: "Cantai ao Senhor um cântico novo.", ref: "Salmos 98:1" },
+            { text: "Em tudo dai graças.", ref: "1 Tessalonicenses 5:18" },
+            { text: "O Senhor é bom para todos.", ref: "Salmos 145:9" }
+        ];
 
-    const FALLBACK_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450'%3E%3Crect width='800' height='450' fill='%23111'/%3E%3Ctext x='400' y='225' text-anchor='middle' dominant-baseline='middle' fill='%23FFD700' font-family='sans-serif' font-size='28'%3EAnúncio%3C/text%3E%3C/svg%3E`;
+        const wrapper = document.getElementById('display-wrapper');
+        const adImg = document.getElementById('ad-image');
+        const verseCard = document.getElementById('verse-card');
+        const qText = document.getElementById('quote-text');
+        const qRef = document.getElementById('quote-ref');
 
-    const slideA = document.getElementById('slide-a');
-    const slideB = document.getElementById('slide-b');
-    const barraEl = document.getElementById('barra');
-    const dotsEl = document.getElementById('dots');
+        let adIndex = 0;
+        let isShowingAd = true;
 
-    let atual = 0;
-    let slideAtivo = 'a'; // qual slide está visível
-    let timer = null;
-    let progInterval = null;
-
-    // Cria bolinhas
-    function criarDots() {
-        dotsEl.innerHTML = '';
-        propagandas.forEach((_, i) => {
-            const d = document.createElement('div');
-            d.className = 'dot' + (i === 0 ? ' ativo' : '');
-            dotsEl.appendChild(d);
-        });
-    }
-
-    function atualizarDots(idx) {
-        dotsEl.querySelectorAll('.dot').forEach((d, i) => {
-            d.classList.toggle('ativo', i === idx);
-        });
-    }
-
-    function criarImagem(src) {
-        const img = document.createElement('img');
-        img.alt = '';
-        img.src = src;
-        img.onerror = () => { img.src = FALLBACK_SVG; };
-        return img;
-    }
-
-    function iniciarProgresso(duracaoMs) {
-        if (progInterval) clearInterval(progInterval);
-        barraEl.style.width = '0%';
-        let decorrido = 0;
-        const tick = 80;
-        progInterval = setInterval(() => {
-            decorrido += tick;
-            const pct = Math.min((decorrido / duracaoMs) * 100, 100);
-            barraEl.style.width = pct + '%';
-            if (pct >= 100) clearInterval(progInterval);
-        }, tick);
-    }
-
-    function mostrar(idx) {
-        if (timer) clearTimeout(timer);
-        if (progInterval) clearInterval(progInterval);
-
-        const item = propagandas[idx];
-        const duracaoMs = item.tempo * 1000;
-
-        // Determina qual slide vai receber o conteúdo novo (o inativo)
-        const prox = slideAtivo === 'a' ? slideB : slideA;
-        const atual_ = slideAtivo === 'a' ? slideA : slideB;
-
-        // Prepara o slide inativo com a nova mídia
-        prox.innerHTML = '';
-        prox.appendChild(criarImagem(item.arquivo));
-
-        // Crossfade
-        prox.classList.add('ativo');
-        atual_.classList.remove('ativo');
-        slideAtivo = slideAtivo === 'a' ? 'b' : 'a';
-
-        atualizarDots(idx);
-        iniciarProgresso(duracaoMs);
-
-        timer = setTimeout(() => {
-            atual = (idx + 1) % propagandas.length;
-            mostrar(atual);
-        }, duracaoMs);
-    }
-
-    // Relógio
-    function tick() {
-        const agora = new Date();
-        const h = String(agora.getHours()).padStart(2, '0');
-        const m = String(agora.getMinutes()).padStart(2, '0');
-        document.getElementById('relogio').textContent = h + ':' + m;
-    }
-    setInterval(tick, 1000);
-    tick();
-
-    // Inicia
-    criarDots();
-    mostrar(0);
-</script>
+        function updateDisplay() {
+            wrapper.style.opacity = 0;
+            setTimeout(() => {
+                if (isShowingAd) {
+                    adImg.src = ads[adIndex] + '?t=' + new Date().getTime(); 
+                    adImg.style.display = 'block';
+                    verseCard.style.display = 'none';
+                    adIndex = (adIndex + 1) % ads.length;
+                    isShowingAd = false;
+                    setTimeout(updateDisplay, 8000);
+                } else {
+                    const v = verses[Math.floor(Math.random() * verses.length)];
+                    qText.innerText = `"${v.text}"`;
+                    qRef.innerText = v.ref;
+                    adImg.style.display = 'none';
+                    verseCard.style.display = 'block';
+                    isShowingAd = true;
+                    setTimeout(updateDisplay, 10000);
+                }
+                wrapper.style.opacity = 1;
+            }, 1000);
+        }
+        updateDisplay();
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-            { tipo: "video", arquivo: "videos/video-exemplo-01.mp4" },
-
-Certifique-se de que seus vídeos e imagens estejam em formato 16:9 (ex: 1920x1080) antes de subir para a TV Box para obter o melhor resultado visual possível.
